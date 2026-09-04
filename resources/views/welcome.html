@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Think - The Web Framework for Go Artisans</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0c1017;
+            --card-bg: rgba(22, 27, 34, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #f43f5e;
+            --primary-glow: rgba(244, 63, 94, 0.25);
+            --text-main: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-purple: #c084fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(244, 63, 94, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(56, 189, 248, 0.1) 0%, transparent 40%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+            width: 100%;
+        }
+
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #fb7185);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px var(--primary-glow);
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--text-main);
+        }
+
+        .badge-version {
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .badge-version::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary) 0%, #fda4af 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: clamp(1.1rem, 2vw, 1.25rem);
+            max-width: 640px;
+            margin: 0 auto 2.5rem auto;
+            line-height: 1.6;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.85rem 1.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #e11d48);
+            color: white;
+            box-shadow: 0 4px 20px var(--primary-glow);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(244, 63, 94, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Features Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: rgba(244, 63, 94, 0.35);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+            font-size: 1.25rem;
+        }
+
+        .icon-red { background: rgba(244, 63, 94, 0.15); color: var(--primary); }
+        .icon-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
+        .icon-green { background: rgba(52, 211, 153, 0.15); color: var(--accent-green); }
+        .icon-purple { background: rgba(192, 132, 252, 0.15); color: var(--accent-purple); }
+
+        .card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.3px;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .code-pill {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.2rem 0.45rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--card-border);
+            padding: 2rem 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        footer span {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="/" class="brand">
+                <div class="brand-logo">T</div>
+                Think
+            </a>
+            <div class="nav-links">
+                <span class="badge-version">v1.0.0</span>
+                <a href="/status" class="nav-link">System Status</a>
+                <a href="/api/ping" class="nav-link">API Demo</a>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <h1>The Go Web Framework for <span>Artisans</span>.</h1>
+            <p>
+                Experience an expressive, elegant Web Framework for Go, backed by blazing speed, strict type safety, and concurrency.
+            </p>
+            <div class="hero-actions">
+                <a href="/status" class="btn btn-primary">
+                    View Live Status
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
+                <a href="/api/ping" class="btn btn-secondary">Test /api/ping</a>
+            </div>
+        </section>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-icon icon-red">⚡</div>
+                <h3>IoC Container & Facades</h3>
+                <p>
+                    Full-featured dependency injection container with <span class="code-pill">facades.Route()</span>, <span class="code-pill">facades.Event()</span> and ServiceProviders lifecycle.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon icon-blue">🌐</div>
+                <h3>Expressive Routing</h3>
+                <p>
+                    Define groups, prefixes, and middleware collections in <span class="code-pill">routes/web.go</span> and <span class="code-pill">routes/api.go</span> seamlessly.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon icon-green">🛡️</div>
+                <h3>HTTP Pipeline & Middlewares</h3>
+                <p>
+                    Onion-layered pipeline supporting request interception, <span class="code-pill">Terminate(req, res)</span> lifecycle hooks, and route-level aliases.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon icon-purple">📦</div>
+                <h3>Decoupled Architecture</h3>
+                <p>
+                    Clean <span class="code-pill">app/</span> directory with Controllers, Middlewares, Models, and Providers strictly organized for enterprise scalability.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            Crafted with <span>❤</span> for Go Developers.
+        </div>
+    </footer>
+</body>
+</html>

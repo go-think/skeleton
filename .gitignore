@@ -1,0 +1,58 @@
+# Binaries and executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+dist/
+build/
+
+# Test binaries and coverage artifacts
+*.test
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+
+# Go workspace
+go.work
+go.work.sum
+
+# Environment files
+.env
+.env.backup
+.env.local
+.env.*.local
+.env.production
+
+# Storage and runtime files
+/storage/*.key
+/storage/app/uploads/*
+!/storage/app/uploads/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*.log
+!/storage/logs/.gitignore
+temp/
+
+# Dependency directories
+# vendor/
+
+# Editor and IDE configurations
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+Thumbs.db
