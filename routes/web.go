@@ -6,6 +6,7 @@ import (
 	"app/app/http/controllers"
 
 	"github.com/go-think/flow"
+	"github.com/go-think/think/facades"
 	"github.com/go-think/think/filesystem"
 )
 
@@ -18,7 +19,7 @@ func MapWebRoutes(r flow.Router) {
 	r.Get("/static/*", staticHandler)
 
 	// 2. Web Group with session
-	r.Middleware("web").Group(func(web flow.Router) {
+	r.Group(flow.GroupAttributes{Middleware: []interface{}{"web"}}, func(web flow.Router) {
 		web.Get("/", welcome.Index)
 		web.Get("/status", welcome.Status)
 		web.Get("/session/flow", testCtrl.SessionFlowAction)
@@ -45,10 +46,12 @@ func MapWebRoutes(r flow.Router) {
 		return flow.NoContent()
 	})
 
-	// 7. Signed URL protected route
+	// 7. Signed URL protected route — validation goes through the UrlGenerator
+	// (lazy app.key resolution + previous_keys rotation support).
+	urlGenerator := facades.App.GetContainer().Make[*flow.UrlGenerator]()
 	r.Get("/signed/download", func(req *flow.Request) *flow.Response {
 		return flow.Json(map[string]interface{}{"message": "secure content verified by signature"})
-	}).Middleware(flow.NewValidateSignatureMiddleware(r)).Name("signed.download")
+	}).Middleware(flow.NewValidateSignatureMiddleware(urlGenerator)).Name("signed.download")
 
 	// 8. Named route with parameters
 	r.Get("/users/{id}", func(req *flow.Request) *flow.Response {

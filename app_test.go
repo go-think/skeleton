@@ -234,8 +234,10 @@ func TestHttpEndpointsAndRouting(t *testing.T) {
 
 // 4. Test Signed URL & Security Protection
 func TestSignedUrlAndSecurity(t *testing.T) {
+	// URL signing requires a configured app.key; without it flow fails closed.
+	t.Setenv("APP_KEY", "test-signature-key")
+
 	app := bootstrap.BootApp()
-	r := app.Make[flow.Router]("router")
 	server := httptest.NewServer(app.BuildServer().Handler)
 	defer server.Close()
 
@@ -250,7 +252,8 @@ func TestSignedUrlAndSecurity(t *testing.T) {
 	resp.Body.Close()
 
 	// 4.2 Valid signature -> 200 OK
-	signedUrl := r.SignedUrl("signed.download", 5*time.Minute, nil)
+	urlGenerator := app.Make[*flow.UrlGenerator]()
+	signedUrl := urlGenerator.TemporarySignedRoute("signed.download", 5*time.Minute, nil)
 	assert.Contains(t, signedUrl, "signature=")
 	assert.Contains(t, signedUrl, "expires=")
 
@@ -269,7 +272,7 @@ func TestSignedUrlAndSecurity(t *testing.T) {
 	resp.Body.Close()
 
 	// 4.4 Expired signature -> 403 Forbidden
-	expiredUrl := r.SignedUrl("signed.download", -1*time.Minute, nil)
+	expiredUrl := urlGenerator.TemporarySignedRoute("signed.download", -1*time.Minute, nil)
 	resp, err = http.Get(server.URL + expiredUrl)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)

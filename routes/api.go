@@ -9,7 +9,7 @@ import (
 func MapApiRoutes(r flow.Router) {
 	testCtrl := controllers.NewTestController()
 
-	r.Middleware("api").Group(func(api flow.Router) {
+	r.Group(flow.GroupAttributes{Middleware: []interface{}{"api"}}, func(api flow.Router) {
 		api.Get("/ping", func(req *flow.Request) *flow.Response {
 			return flow.Json(map[string]string{"message": "pong"})
 		})
