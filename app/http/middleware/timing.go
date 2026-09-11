@@ -21,7 +21,7 @@ func (m *TimingMiddleware) Process(req *flow.Request, next flow.Closure) interfa
 
 	duration := time.Since(start)
 	if res, ok := result.(*flow.Response); ok {
-		res.Header.Set("X-Response-Time", fmt.Sprintf("%dms", duration.Milliseconds()))
+		res.Header("X-Response-Time", fmt.Sprintf("%dms", duration.Milliseconds()))
 	}
 	return result
 }
