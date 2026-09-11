@@ -559,6 +559,12 @@ func TestEventDispatcher(t *testing.T) {
 // 12. Test Console Command Handling
 func TestConsoleKernel(t *testing.T) {
 	app := bootstrap.BootApp()
-	status := app.HandleCommand("test:command")
+
+	// route:list 输出路由表并成功返回。
+	status := app.HandleCommand("route:list")
 	assert.Equal(t, 0, status)
+
+	// 未知命令返回非零退出码。
+	status = app.HandleCommand("test:command")
+	assert.NotEqual(t, 0, status)
 }
