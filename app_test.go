@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -236,6 +237,7 @@ func TestHttpEndpointsAndRouting(t *testing.T) {
 func TestSignedUrlAndSecurity(t *testing.T) {
 	// URL signing requires a configured app.key; without it flow fails closed.
 	t.Setenv("APP_KEY", "test-signature-key")
+	config.Reload()
 
 	app := bootstrap.BootApp()
 	server := httptest.NewServer(app.BuildServer().Handler)
@@ -257,7 +259,14 @@ func TestSignedUrlAndSecurity(t *testing.T) {
 	assert.Contains(t, signedUrl, "signature=")
 	assert.Contains(t, signedUrl, "expires=")
 
-	resp, err = http.Get(server.URL + signedUrl)
+	toTestURL := func(u string) string {
+		if strings.HasPrefix(u, "http://") || strings.HasPrefix(u, "https://") {
+			return u
+		}
+		return server.URL + u
+	}
+
+	resp, err = http.Get(toTestURL(signedUrl))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
@@ -266,14 +275,14 @@ func TestSignedUrlAndSecurity(t *testing.T) {
 
 	// 4.3 Tampered signature -> 403 Forbidden
 	tamperedUrl := signedUrl + "&tampered=true"
-	resp, err = http.Get(server.URL + tamperedUrl)
+	resp, err = http.Get(toTestURL(tamperedUrl))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	resp.Body.Close()
 
 	// 4.4 Expired signature -> 403 Forbidden
 	expiredUrl := urlGenerator.TemporarySignedRoute("signed.download", -1*time.Minute, nil)
-	resp, err = http.Get(server.URL + expiredUrl)
+	resp, err = http.Get(toTestURL(expiredUrl))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	resp.Body.Close()
