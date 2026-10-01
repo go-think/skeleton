@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -230,6 +231,22 @@ func TestHttpEndpointsAndRouting(t *testing.T) {
 	resp, err = http.Get(server.URL + "/nocontent")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	resp.Body.Close()
+
+	// 3.5 FormRequest Validation (/api/users)
+	// Success case
+	resp, err = http.Post(server.URL+"/api/users", "application/json", strings.NewReader(`{"name":"Taylor","email":"taylor@example.com"}`))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+
+	// Failure case -> 422 Unprocessable Entity
+	resp, err = http.Post(server.URL+"/api/users", "application/json", strings.NewReader(`{"name":"T","email":"invalid"}`))
+	assert.NoError(t, err)
+	assert.Equal(t, 422, resp.StatusCode)
+	errBody, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(errBody), "The given data was invalid.")
+	assert.Contains(t, string(errBody), "errors")
 	resp.Body.Close()
 }
 
@@ -576,4 +593,136 @@ func TestConsoleKernel(t *testing.T) {
 	// 未知命令返回非零退出码。
 	status = app.HandleCommand("test:command")
 	assert.NotEqual(t, 0, status)
+}
+
+// 13. Test SSR Authentication Flow (Login, Register, Dashboard, Logout)
+func TestAuthFlow_SSR(t *testing.T) {
+	app := bootstrap.BootApp()
+	ts := httptest.NewServer(app.BuildServer().Handler)
+	defer ts.Close()
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse // Don't auto follow so we can check redirect status
+		},
+	}
+
+	// 1. Visit GET /login -> 200 OK, renders HTML with login form and CSRF token
+	resp, err := client.Get(ts.URL + "/login")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	assert.Contains(t, string(body), "Sign in to your account")
+	assert.Contains(t, string(body), `name="_token"`)
+
+	// 2. Visit GET /register -> 200 OK, renders HTML with register form
+	resp, err = client.Get(ts.URL + "/register")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	assert.Contains(t, string(body), "Create your account")
+	assert.Contains(t, string(body), `name="password_confirmation"`)
+
+	// 3. Unauthenticated access to /dashboard -> 302 Redirect to /login
+	resp, err = client.Get(ts.URL + "/dashboard")
+	assert.NoError(t, err)
+	assert.Equal(t, 302, resp.StatusCode)
+	assert.Equal(t, "/login", resp.Header.Get("Location"))
+	resp.Body.Close()
+
+	// 4. Extract CSRF token and Session cookie from GET /login
+	getLoginResp, _ := client.Get(ts.URL + "/login")
+	var sessionCookie *http.Cookie
+	for _, c := range getLoginResp.Cookies() {
+		if c.Name == "think_session" {
+			sessionCookie = c
+			break
+		}
+	}
+	loginBodyBytes, _ := io.ReadAll(getLoginResp.Body)
+	getLoginResp.Body.Close()
+
+	loginBodyStr := string(loginBodyBytes)
+	tokenPrefix := `name="_token" value="`
+	tokenStart := strings.Index(loginBodyStr, tokenPrefix)
+	var csrfToken string
+	if tokenStart != -1 {
+		rest := loginBodyStr[tokenStart+len(tokenPrefix):]
+		tokenEnd := strings.Index(rest, `"`)
+		if tokenEnd != -1 {
+			csrfToken = rest[:tokenEnd]
+		}
+	}
+	assert.NotEmpty(t, csrfToken)
+
+	// 5. POST /login with credentials
+	postData := url.Values{}
+	postData.Set("_token", csrfToken)
+	postData.Set("email", "taylor@example.com")
+	postData.Set("password", "password")
+
+	loginReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/login", strings.NewReader(postData.Encode()))
+	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if sessionCookie != nil {
+		loginReq.AddCookie(sessionCookie)
+	}
+
+	loginResp, err := client.Do(loginReq)
+	assert.NoError(t, err)
+	assert.Equal(t, 302, loginResp.StatusCode)
+	assert.Equal(t, "/dashboard", loginResp.Header.Get("Location"))
+
+	// Capture updated session cookie
+	for _, c := range loginResp.Cookies() {
+		if c.Name == "think_session" {
+			sessionCookie = c
+		}
+	}
+	loginResp.Body.Close()
+
+	// 6. Access /dashboard with authenticated session -> 200 OK
+	dashReq, _ := http.NewRequest(http.MethodGet, ts.URL+"/dashboard", nil)
+	if sessionCookie != nil {
+		dashReq.AddCookie(sessionCookie)
+	}
+	dashResp, err := client.Do(dashReq)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, dashResp.StatusCode)
+	dashBody, _ := io.ReadAll(dashResp.Body)
+	dashResp.Body.Close()
+	assert.Contains(t, string(dashBody), "Welcome back, Artisan Developer!")
+	assert.Contains(t, string(dashBody), "Active Session")
+	assert.Contains(t, string(dashBody), "taylor@example.com")
+
+	// 7. POST /logout -> 302 Redirect to /login
+	logoutData := url.Values{}
+	logoutData.Set("_token", csrfToken)
+	logoutReq, _ := http.NewRequest(http.MethodPost, ts.URL+"/logout", strings.NewReader(logoutData.Encode()))
+	logoutReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if sessionCookie != nil {
+		logoutReq.AddCookie(sessionCookie)
+	}
+	logoutResp, err := client.Do(logoutReq)
+	assert.NoError(t, err)
+	assert.Equal(t, 302, logoutResp.StatusCode)
+	assert.Equal(t, "/login", logoutResp.Header.Get("Location"))
+	for _, c := range logoutResp.Cookies() {
+		if c.Name == "think_session" {
+			sessionCookie = c
+		}
+	}
+	logoutResp.Body.Close()
+
+	// 8. Access /dashboard again after logout -> 302 Redirect to /login
+	dashReq2, _ := http.NewRequest(http.MethodGet, ts.URL+"/dashboard", nil)
+	if sessionCookie != nil {
+		dashReq2.AddCookie(sessionCookie)
+	}
+	dashResp2, err := client.Do(dashReq2)
+	assert.NoError(t, err)
+	assert.Equal(t, 302, dashResp2.StatusCode)
+	assert.Equal(t, "/login", dashResp2.Header.Get("Location"))
+	dashResp2.Body.Close()
 }

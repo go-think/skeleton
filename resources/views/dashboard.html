@@ -1,0 +1,38 @@
+{{ define "content" }}
+<div class="space-y-6">
+    <!-- Welcome Header -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-800">Welcome back, {{ auth_user }}! 👋</h1>
+            <p class="text-sm text-slate-500 mt-1">You are successfully logged in via Think Session & Cookie Authentication.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                Active Session
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Authenticated User</div>
+            <div class="text-lg font-bold text-slate-800">{{ auth_user }}</div>
+            <div class="text-xs text-slate-500 mt-1">Email: {{ session "user_email" "user@example.com" }}</div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">CSRF Shield</div>
+            <div class="text-lg font-bold text-emerald-600">Enabled & Verified</div>
+            <div class="text-xs text-slate-500 mt-1">Token: {{ csrf_token }}</div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Session Driver</div>
+            <div class="text-lg font-bold text-slate-800">File Storage</div>
+            <div class="text-xs text-slate-500 mt-1">Lifetime: 120 minutes</div>
+        </div>
+    </div>
+</div>
+{{ end }}

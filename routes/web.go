@@ -19,10 +19,19 @@ func MapWebRoutes(r flow.Router) {
 	r.Get("/static/*", staticHandler)
 
 	// 2. Web Group with session
+	authCtrl := controllers.NewAuthController()
 	r.Group(flow.GroupAttributes{Middleware: []interface{}{"web"}}, func(web flow.Router) {
 		web.Get("/", welcome.Index)
 		web.Get("/status", welcome.Status)
 		web.Get("/session/flow", testCtrl.SessionFlowAction)
+
+		// Auth Routes (Laravel Breeze SSR style)
+		web.Get("/login", authCtrl.ShowLoginForm).Name("login")
+		web.Post("/login", authCtrl.Login)
+		web.Get("/register", authCtrl.ShowRegisterForm).Name("register")
+		web.Post("/register", authCtrl.Register)
+		web.Post("/logout", authCtrl.Logout).Name("logout")
+		web.Get("/dashboard", authCtrl.Dashboard).Middleware("auth").Name("dashboard")
 	})
 
 	// 3. View template rendering

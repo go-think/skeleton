@@ -14,6 +14,7 @@ type AppConfig struct {
 	Key          string   `config:"key"`
 	PreviousKeys []string `config:"previous_keys"`
 	Url          string   `config:"url"`
+	Host         string   `config:"host"`
 	Port         string   `config:"port"`
 	Timezone     string   `config:"timezone"`
 }
@@ -26,7 +27,8 @@ func loadAppConfig() *AppConfig {
 		Key:          env.Get("APP_KEY", ""),
 		PreviousKeys: parseKeyList(env.Get("APP_PREVIOUS_KEYS", "")),
 		Url:          env.Get("APP_URL", "http://localhost:8080"),
-		Port:         env.Get("APP_PORT", "8080"),
+		Host:         env.Get("APP_HOST", env.Get("SERVER_HOST", "127.0.0.1")),
+		Port:         env.Get("APP_PORT", env.Get("SERVER_PORT", "8080")),
 		Timezone:     env.Get("APP_TIMEZONE", "UTC"),
 	}
 }

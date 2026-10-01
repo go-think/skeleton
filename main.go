@@ -12,5 +12,5 @@ func main() {
 	if len(os.Args) > 1 {
 		os.Exit(app.HandleCommand(os.Args[1:]...))
 	}
-	app.Run(":" + config.App.Port)
+	app.Run(config.App.Host + ":" + config.App.Port)
 }

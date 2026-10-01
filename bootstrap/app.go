@@ -23,7 +23,12 @@ func BootApp() *think.Application {
 		}).
 		WithMiddleware(func(m *think.MiddlewareConfig) {
 			// Global middlewares
+			m.RequestID()
+			m.SecureHeaders()
+			m.RequestBodyLimit(32 * 1024 * 1024)
+			m.TrustProxies("*")
 			m.TrimStrings()
+			m.ConvertEmptyStringsToNull()
 			m.Use(appMiddleware.NewTimingMiddleware())
 			m.Use(appMiddleware.NewAuditLogMiddleware())
 			m.Cors(flow.DefaultCorsConfig())

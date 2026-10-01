@@ -33,6 +33,15 @@ func MapApiRoutes(r flow.Router) {
 		// Dependency Injection testing
 		api.Get("/di", testCtrl.DependencyInjectionAction)
 
+		// FormRequest Auto-Validation testing
+		api.Post("/users", func(req *controllers.StoreUserRequest) *flow.Response {
+			return flow.Json(map[string]any{
+				"created": true,
+				"name":    req.Name,
+				"email":   req.Email,
+			})
+		})
+
 		// Input helper testing
 		api.Get("/input", testCtrl.InputHelperAction)
 		api.Post("/input", testCtrl.InputHelperAction)
